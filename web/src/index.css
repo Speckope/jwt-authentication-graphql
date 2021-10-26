@@ -1,0 +1,41 @@
+@import-normalize;
+
+*,
+*::after,
+*::before {
+  margin: 0;
+  padding: 0;
+  border: 0 none;
+  box-sizing: inherit;
+}
+
+html {
+  font-size: 62.5%;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-size: 1.6rem;
+  line-height: 1.6;
+}
+
+body,
+#root,
+.App {
+  min-height: 100vh;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+img,
+picture,
+video {
+  max-width: 100%;
+  display: block;
+}
