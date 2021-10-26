@@ -104,10 +104,10 @@ export class UserResolver {
     // LOGIN SUCCESS
     // Send cookie back to the web
     // name your cookie some generic id name, so noone knows what it is!
+    // Refresh Token!
     res.cookie(
       'jid',
       sign({ userId: user.id }, 'OtherSecret', {
-        /// accessToken should be for something short
         expiresIn: '7d',
       }),
       {
