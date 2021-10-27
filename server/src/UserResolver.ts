@@ -6,11 +6,13 @@ import {
   ObjectType,
   Query,
   Resolver,
+  UseMiddleware,
 } from 'type-graphql';
 import { User } from './entity/User';
 import { compare, hash } from 'bcryptjs';
-import { sign } from 'jsonwebtoken';
 import { MyContext } from './MyContext';
+import { createAccessToken, createRefreshToken } from './auth';
+import { isAuth } from './isAuthMiddleware';
 
 @ObjectType()
 class LoginResponse {
@@ -39,6 +41,15 @@ export class UserResolver {
   //       },
   //     },
   //   });
+
+  @Query(() => String)
+  // We will be using middleware to make authentication easier!
+  @UseMiddleware(isAuth)
+  bye(@Ctx() { payload }: MyContext) {
+    console.log(payload);
+    // It sohuld be there, if it's not, middleware before will throw an error!
+    return `You user id is ${payload.userId}`;
+  }
 
   // FIND USER BY EMAIL
   @Query(() => User)
@@ -105,26 +116,17 @@ export class UserResolver {
     // Send cookie back to the web
     // name your cookie some generic id name, so noone knows what it is!
     // Refresh Token!
-    res.cookie(
-      'jid',
-      sign({ userId: user.id }, 'OtherSecret', {
-        expiresIn: '7d',
-      }),
-      {
-        // This way this cookie cannot be accessed by javascript
-        httpOnly: true,
-        // There are much more options avilable!!
-      }
-    );
+    res.cookie('jid', createRefreshToken(user), {
+      // This way this cookie cannot be accessed by javascript
+      httpOnly: true,
+      // There are much more options avilable!!
+    });
 
     return {
       // We pass into sign what we want to store in a token as a first argument
       // 2nd is a secret to validate the token
       // 3rd is options
-      accessToken: sign({ userId: user.id }, 'secret', {
-        /// accessToken should be for something short
-        expiresIn: '15m',
-      }),
+      accessToken: createAccessToken(user),
     };
   }
 }
