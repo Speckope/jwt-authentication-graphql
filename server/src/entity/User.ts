@@ -18,4 +18,10 @@ export class User extends BaseEntity {
 
   @Column()
   password: string;
+
+  // This place is for passing the token version when we create one.
+  // It will be for disactivating token.
+  // We can pass extra options in brackets!
+  @Column('int', { default: 0 })
+  tokenVersion: number;
 }

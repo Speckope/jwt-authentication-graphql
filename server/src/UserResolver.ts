@@ -2,6 +2,7 @@ import {
   Arg,
   Ctx,
   Field,
+  Int,
   Mutation,
   ObjectType,
   Query,
@@ -13,6 +14,8 @@ import { compare, hash } from 'bcryptjs';
 import { MyContext } from './MyContext';
 import { createAccessToken, createRefreshToken } from './auth';
 import { isAuth } from './isAuthMiddleware';
+import { sendRefreshToken } from './sendRefreshToken';
+import { getConnection } from 'typeorm';
 
 @ObjectType()
 class LoginResponse {
@@ -67,6 +70,24 @@ export class UserResolver {
     return await User.find();
   }
 
+  // Normally you don't want to expose this mutation
+  // Here it's hfor testing
+  // Instead create a function for when nuser forgets a password
+  @Mutation(() => Boolean)
+  async revokeRefreshTokensForUser(@Arg('userId', () => Int) userId: number) {
+    // This is how we can increment in TypeORM!
+    // Now when we call this, tokenVersion will increment on user in database,
+    // but it will stay the same in token until user gets a new one!.
+    // We can use it when user changes a password or somethig like that!!
+    // So once user gets new RefreshToken he won't be alb eto authenticate with it.
+    // He can only use current accessToken he has(max 15m)
+    await getConnection()
+      .getRepository(User)
+      .increment({ id: userId }, 'tokenVersion', 1);
+
+    return true;
+  }
+
   // We create mutations when we want to modify data in some way
   @Mutation(() => Boolean) //() => Boolean tells what this mutation returns
   // Pass arguments we take name of our mutation
@@ -116,11 +137,7 @@ export class UserResolver {
     // Send cookie back to the web
     // name your cookie some generic id name, so noone knows what it is!
     // Refresh Token!
-    res.cookie('jid', createRefreshToken(user), {
-      // This way this cookie cannot be accessed by javascript
-      httpOnly: true,
-      // There are much more options avilable!!
-    });
+    sendRefreshToken(res, createRefreshToken(user));
 
     return {
       // We pass into sign what we want to store in a token as a first argument

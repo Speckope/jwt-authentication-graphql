@@ -6,12 +6,60 @@ import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-co
 import { buildSchema } from 'type-graphql';
 import { UserResolver } from './UserResolver';
 import { createConnection } from 'typeorm';
+// This is express middleware to parse cookies
+import cookieParser from 'cookie-parser';
+import { verify } from 'jsonwebtoken';
+import { User } from './entity/User';
+import { createAccessToken, createRefreshToken } from './auth';
+import { sendRefreshToken } from './sendRefreshToken';
 
 (async () => {
   const app = express();
+  // With this we can do req.cookies and recieve object like this: { jid: 'abcd123' }
+  app.use(cookieParser());
 
   app.get('/', (_, res) => {
     res.send('Hello!');
+  });
+
+  // This is a special route, it will help with refresh purposes
+  app.post('/refresh_token', async (req, res) => {
+    // Read token from our cookie
+    const token = req.cookies.jid;
+    // return if no token
+    if (!token) {
+      // We don't send an access token and say ok false
+      return res.send({ ok: false, accessToken: '' });
+    }
+
+    let payload: any = null;
+    try {
+      // Make sure refresh token has not expired and it's valid
+      payload = verify(token, process.env.REFRESH_TOKEN_SECRET!);
+    } catch (err) {
+      console.log(err);
+      return res.send({ ok: false, accessToken: '' });
+    }
+
+    // If get here, means token is valid and we can send back an access token
+    // Find user with our userId from token
+    const user = await User.findOne({ id: payload.userId });
+
+    // If no user
+    if (!user) {
+      return res.send({ ok: false, accessToken: '' });
+    }
+
+    // If versions doesn't match, it means the token is invalid
+    if (user.tokenVersion !== payload.tokenVersion) {
+      return res.send({ ok: false, accessToken: '' });
+    }
+
+    // Send a new refresh token
+    sendRefreshToken(res, createRefreshToken(user));
+
+    // Send back ok true and new access token if we have found a user from recieved token
+    return res.send({ ok: true, accessToken: createAccessToken(user) });
   });
 
   // We don't have to pass anything, bc everything is in our ormconfig.json
