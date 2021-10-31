@@ -5,5 +5,7 @@ import { Response } from 'express';
 export const sendRefreshToken = (res: Response, token: string) => {
   res.cookie('jid', token, {
     httpOnly: true,
+    // This will restrict refreshing token to this route(when we send request to this route)
+    path: '/refresh_token',
   });
 };

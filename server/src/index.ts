@@ -6,6 +6,7 @@ import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-co
 import { buildSchema } from 'type-graphql';
 import { UserResolver } from './UserResolver';
 import { createConnection } from 'typeorm';
+import cors from 'cors';
 // This is express middleware to parse cookies
 import cookieParser from 'cookie-parser';
 import { verify } from 'jsonwebtoken';
@@ -15,6 +16,15 @@ import { sendRefreshToken } from './sendRefreshToken';
 
 (async () => {
   const app = express();
+  // Cors handling middleware
+  app.use(
+    cors({
+      // With this we can send cookies
+      credentials: true,
+      // Origin is what is requesting (our frontend website)
+      origin: 'http://localhost:3000',
+    })
+  );
   // With this we can do req.cookies and recieve object like this: { jid: 'abcd123' }
   app.use(cookieParser());
 
@@ -79,6 +89,9 @@ import { sendRefreshToken } from './sendRefreshToken';
 
   apolloServer.applyMiddleware({
     app,
+    // We won't be using apollo cors handling,
+    // presumably easier to do it ourselves
+    cors: false,
   });
 
   app.listen(4000, () => console.log('Express listening on 4000...'));

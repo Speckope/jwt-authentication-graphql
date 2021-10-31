@@ -1,4 +1,6 @@
 @import-normalize;
+@import url(https://fonts.googleapis.com/css2?family=Open+Sans&display=swap);
+@import url(https://fonts.googleapis.com/css2?family=Montserrat&family=Open+Sans&display=swap);
 
 *,
 *::after,
@@ -12,11 +14,14 @@ html {
   font-size: 62.5%;
   box-sizing: border-box;
   scroll-behavior: smooth;
+  font-family: 'Montserrat', sans-serif;
 }
 
 body {
   font-size: 1.6rem;
   line-height: 1.6;
+  background-color: #1f1d36;
+  color: beige;
 }
 
 body,
@@ -37,4 +42,17 @@ picture,
 video {
   max-width: 100%;
   display: block;
+}
+
+a {
+  color: beige;
+  text-decoration: none;
+}
+
+a:visited {
+  color: beige;
+}
+
+a:hover {
+  color: rgb(226, 176, 114);
 }

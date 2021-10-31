@@ -16,11 +16,15 @@ import { createAccessToken, createRefreshToken } from './auth';
 import { isAuth } from './isAuthMiddleware';
 import { sendRefreshToken } from './sendRefreshToken';
 import { getConnection } from 'typeorm';
+import { verify } from 'jsonwebtoken';
 
 @ObjectType()
 class LoginResponse {
   @Field()
   accessToken: string;
+  // We need to explicitly say what the type is for more complicated ones
+  @Field(() => User)
+  user: User;
 }
 
 // we use type-graphql for easier wotk with ts.
@@ -52,6 +56,29 @@ export class UserResolver {
     console.log(payload);
     // It sohuld be there, if it's not, middleware before will throw an error!
     return `You user id is ${payload.userId}`;
+  }
+
+  // Query for gettin current user
+  @Query(() => User, { nullable: true }) // { nullable: true } allows us to send empty responses
+  me(@Ctx() context: MyContext) {
+    const authorization = context.req.headers['authorization'];
+
+    // If not authorization, return null (no user)
+    if (!authorization) {
+      return null;
+    }
+
+    try {
+      const token = authorization.split(' ')[1];
+
+      // We expect accessToken
+      // verify throws an error if it's invalid or expired
+      const payload: any = verify(token, process.env.ACCESS_TOKEN_SECRET!);
+      return User.findOne(payload.userId);
+    } catch (err) {
+      console.log(err);
+      return null;
+    }
   }
 
   // FIND USER BY EMAIL
@@ -144,6 +171,15 @@ export class UserResolver {
       // 2nd is a secret to validate the token
       // 3rd is options
       accessToken: createAccessToken(user),
+      user,
     };
+  }
+
+  @Mutation(() => Boolean)
+  async logout(@Ctx() { res }: MyContext) {
+    // This will clear the refresh token
+    sendRefreshToken(res, '');
+
+    return true;
   }
 }

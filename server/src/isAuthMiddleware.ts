@@ -9,10 +9,12 @@ export const isAuth: MiddlewareFn<MyContext> = ({ context }, next) => {
   const authorization = context.req.headers['authorization'];
 
   // If there is no authorization header
-  if (!authorization) throw new Error('not authenticated');
+  if (!authorization) {
+    throw new Error('not authenticated');
+  }
 
   try {
-    const token = authorization?.split(' ')[1];
+    const token = authorization.split(' ')[1];
 
     // We expect accessToken
     // verify throws an error if it's invalid or expired
